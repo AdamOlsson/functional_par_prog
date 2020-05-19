@@ -6,3 +6,4 @@ percept/
 labD/web.dat
 labD/foo.erl
 labD/foo.beam
+labD/*.beam
