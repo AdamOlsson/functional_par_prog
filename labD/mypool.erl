@@ -67,7 +67,7 @@ pool([Node | Nodes]) ->
 start2() ->
     spawn_link(fun() ->
                     Nodes = [ node() | nodes() ],
-                    Workers = [ spawn_link(Node, fun() ->  worker() end) ||
+                    Workers = [ spawn(Node, fun() ->  worker() end) ||
                                     Node <- Nodes,
                                     _ <- lists:seq(0,10)],
                     process_flag(trap_exit,true),
@@ -111,7 +111,6 @@ worker() ->
                 worker()
             catch
                 {'EXIT', Why} -> 
-                    % io:format("***exit: ~p\n",[Why])
                     Client ! {crash, Ref, Why}
             end
     end.
@@ -126,7 +125,8 @@ client(Parent, F) ->
             receive 
                 {ok, Ref, Results} ->
                     Parent ! {self(), Results};
-                {crash, Ref, _} ->
+                {crash, Ref, Why} ->
+                    io:format("***work failed: ~p\nrestarting work.",[Why]),
                     client(Parent, F)
             end
     end.
