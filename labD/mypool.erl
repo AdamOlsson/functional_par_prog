@@ -53,9 +53,6 @@ pool([Node | Nodes]) ->
 
 
 
-
-
-
 start_pool2() ->
     spawn_link(fun() ->
                     Nodes = [ node() | nodes() ],
@@ -82,16 +79,32 @@ pool2([Worker | Workers]) ->
     end.
 
 
-do_work2([])  -> [];
-do_work2([F | Fs]) ->
+% do_work2([])  -> [];
+% do_work2([F | Fs]) ->
+%     pool2 ! {req_worker, self()},
+%     receive
+%         {use_worker, Worker} ->
+%             Ref = make_ref(),
+%             Client = self(),
+%             Worker ! {work, F, Client, Ref},
+%             receive {Ref, Results} -> Results end
+%     end.
+
+client(Parent, F) ->
     pool2 ! {req_worker, self()},
     receive
         {use_worker, Worker} ->
             Ref = make_ref(),
             Client = self(),
             Worker ! {work, F, Client, Ref},
-            receive {Ref, Results} -> Results end
+            receive {Ref, Results} -> Parent ! {self(), Results} end
     end.
+
+
+do_work3(Fs) ->
+    Parent = self(),
+    Clients = [spawn_link(fun() -> client(Parent, F) end) || F <- Fs],
+    [receive {Pid,L} -> L end || Pid <- Clients].
 
 
 worker() ->

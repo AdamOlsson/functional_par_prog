@@ -141,14 +141,14 @@ map_reduce_load_balance(Map,M,Reduce,R,Input) ->
                                 group(lists:sort(Mapped))
                             end
                         end, Splits),
-    Mappeds = mypool:do_work2(MapFuns),
+    Mappeds = mypool:do_work3(MapFuns),
     ReduceFuns = lists:map(fun(R) -> 
                             Inputs = [KV || {J,KVs} <- Mappeds, R==J, KV <- KVs],
                             fun() ->
                                 reduce_seq(Reduce, Inputs)
                             end
                         end, lists:seq(0,R-1)),
-    Reduceds = mypool:do_work2(ReduceFuns),
+    Reduceds = mypool:do_work3(ReduceFuns),
     lists:sort(lists:flatten(Reduceds)).
 
 

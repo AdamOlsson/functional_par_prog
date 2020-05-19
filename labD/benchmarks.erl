@@ -1,7 +1,7 @@
 -module(benchmarks).
 -compile(export_all).
 
--define(EXECUTIONS,5).
+-define(EXECUTIONS,1).
 
 map_reduce_par()            -> benchmark(page_rank_par).
 map_reduce_dist()           -> benchmark(page_rank_dist).
