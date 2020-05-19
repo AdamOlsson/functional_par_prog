@@ -55,7 +55,7 @@ pool2([Worker | Workers]) ->
 worker() ->
     receive 
         {work, F, Client, Ref} ->
-            try             
+            try % For Fault-tolerance
                 Client ! {ok, Ref, F()},
                 pool2 ! {available, self()},
                 worker()
@@ -75,8 +75,7 @@ client(Parent, F) ->
             receive 
                 {ok, Ref, Results} ->
                     Parent ! {self(), Results};
-                {crash, Ref, Why} ->
-                    io:format("***work failed: ~p\nrestarting work.",[Why]),
+                {crash, Ref, Why} -> % For Fault-tolerance
                     client(Parent, F)
             end
     end.
