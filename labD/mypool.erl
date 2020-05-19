@@ -105,9 +105,15 @@ pool2([Worker | Workers]) ->
 worker() ->
     receive 
         {work, F, Client, Ref} ->
-            Client ! {Ref, F()},
-            pool2 ! {available, self()},
-            worker()
+            try             
+                Client ! {ok, Ref, F()},
+                pool2 ! {available, self()},
+                worker()
+            catch
+                {'EXIT', Why} -> 
+                    % io:format("***exit: ~p\n",[Why])
+                    Client ! {crash, Ref, Why}
+            end
     end.
 
 client(Parent, F) ->
@@ -117,7 +123,12 @@ client(Parent, F) ->
             Ref = make_ref(),
             Client = self(),
             Worker ! {work, F, Client, Ref},
-            receive {Ref, Results} -> Parent ! {self(), Results} end
+            receive 
+                {ok, Ref, Results} ->
+                    Parent ! {self(), Results};
+                {crash, Ref, _} ->
+                    client(Parent, F)
+            end
     end.
 
 
