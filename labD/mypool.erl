@@ -105,14 +105,9 @@ pool2([Worker | Workers]) ->
 worker() ->
     receive 
         {work, F, Client, Ref} ->
-            try 
-                Client ! {Ref, F()},
-                pool2 ! {available, self()},
-                worker()
-            catch 
-                {'EXIT', _} ->
-                    worker()
-            end
+            Client ! {Ref, F()},
+            pool2 ! {available, self()},
+            worker()
     end.
 
 client(Parent, F) ->
