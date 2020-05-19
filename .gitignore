@@ -3,6 +3,8 @@ L3.hs
 parconc-examples/
 percept/
 
+labB/percept
+
 labD/web.dat
 labD/foo.erl
 labD/foo.beam
