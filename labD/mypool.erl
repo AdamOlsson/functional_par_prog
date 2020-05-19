@@ -52,8 +52,19 @@ pool([Node | Nodes]) ->
 %     end.
 
 
+% on_exit(Pid, Fun) ->
+%     spawn(  fun() ->    process_flag(trap_exit, true),
+%                         link(Pid),
+%                         receive {'EXIT', Pid, Why} -> Fun(Why) end
+%             end).
 
-start_pool2() ->
+% keep_alive(Fun) ->
+%     Pid = spawn(Fun),
+%     on_exit(Pid, fun(_) -> keep_alive(Fun) end).
+
+
+% TODO: Add keep alive
+start2() ->
     spawn_link(fun() ->
                     Nodes = [ node() | nodes() ],
                     Workers = [ spawn_link(Node, fun() ->  worker() end) ||
@@ -90,6 +101,20 @@ pool2([Worker | Workers]) ->
 %             receive {Ref, Results} -> Results end
 %     end.
 
+% If crash, sent error to client
+worker() ->
+    receive 
+        {work, F, Client, Ref} ->
+            try 
+                Client ! {Ref, F()},
+                pool2 ! {available, self()},
+                worker()
+            catch 
+                {'EXIT', _} ->
+                    worker()
+            end
+    end.
+
 client(Parent, F) ->
     pool2 ! {req_worker, self()},
     receive
@@ -107,10 +132,3 @@ do_work3(Fs) ->
     [receive {Pid,L} -> L end || Pid <- Clients].
 
 
-worker() ->
-    receive 
-        {work, F, Client, Ref} ->
-            Client ! {Ref, F()},
-            pool2 ! {available, self()},
-            worker()
-    end.
