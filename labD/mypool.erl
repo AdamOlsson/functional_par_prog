@@ -2,14 +2,7 @@
 -module(mypool).
 -compile(export_all).
 
-% start_pool() ->
-%     spawn_link(fun() ->
-%                     Nodes = [ node() | nodes() ],
-%                     process_flag(trap_exit,true),
-%                     register(pool,self()),
-%                     pool(Nodes)
-%                 end).
-
+% ##### Distribute Map-Reduce
 pool() ->
     Nodes = [ node() | nodes() ],
     spawn_link(fun() ->
@@ -31,39 +24,8 @@ pool([Node | Nodes]) ->
             pool(Nodes)
     end.
 
+% ##### Load balancing (new implementation of the worker pool)
 
-
-% do_work([])  -> [];
-% do_work([F]) -> F();
-% do_work([F | Fs]) ->
-%     pool ! {get_node, self()},
-%     receive
-%         {use_node, Node} ->
-%             Ref = make_ref(),
-%             Parent = self(),
-%             spawn_link(Node, fun() ->
-%                 Results = F(),
-%                 Parent ! {Ref, Results},
-%                 pool ! {available, Node}
-%             end),
-%             do_work(Fs) ++ receive {Ref, Results} -> Results end;
-%         {no_node, _} ->
-%             F() ++ do_work(Fs)
-%     end.
-
-
-% on_exit(Pid, Fun) ->
-%     spawn(  fun() ->    process_flag(trap_exit, true),
-%                         link(Pid),
-%                         receive {'EXIT', Pid, Why} -> Fun(Why) end
-%             end).
-
-% keep_alive(Fun) ->
-%     Pid = spawn(Fun),
-%     on_exit(Pid, fun(_) -> keep_alive(Fun) end).
-
-
-% TODO: Add keep alive
 start2() ->
     spawn_link(fun() ->
                     Nodes = [ node() | nodes() ],
@@ -90,18 +52,6 @@ pool2([Worker | Workers]) ->
     end.
 
 
-% do_work2([])  -> [];
-% do_work2([F | Fs]) ->
-%     pool2 ! {req_worker, self()},
-%     receive
-%         {use_worker, Worker} ->
-%             Ref = make_ref(),
-%             Client = self(),
-%             Worker ! {work, F, Client, Ref},
-%             receive {Ref, Results} -> Results end
-%     end.
-
-% If crash, sent error to client
 worker() ->
     receive 
         {work, F, Client, Ref} ->
